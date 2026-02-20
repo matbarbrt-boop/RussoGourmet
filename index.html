@@ -11,7 +11,7 @@
     <section class="brand-section">
         <div class="logo-wrapper"><img src="russogourmet.png" class="logo-circle"></div>
         <h1 class="brand-name">Russo Gourmet</h1>
-        <div id="status-loja"></div>
+        <div id="status-loja" style="font-size: 0.85rem; margin-top: 5px;"></div>
     </section>
 
     <main class="container" id="menu-render">
@@ -40,30 +40,34 @@
         const db = firebase.database();
 
         let carrinho = [];
+        const diasSemana = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
-        // ESCUTAR NUVEM EM TEMPO REAL
+        // Carregar Cardápio e Status
         db.ref('cardapio').on('value', (snapshot) => {
-            const data = snapshot.val() || {};
-            renderizar(data);
+            renderizar(snapshot.val() || {});
+        });
+
+        db.ref('horarios').on('value', (s) => {
+            const h = s.val() || {};
+            const hoje = diasSemana[new Date().getDay()];
+            document.getElementById('status-loja').innerHTML = `🕒 Aberto hoje: ${h[hoje] || 'Consulte-nos'}`;
         });
 
         function renderizar(data) {
             const menu = document.getElementById('menu-render');
             menu.innerHTML = "";
-            
             Object.keys(data).forEach(cat => {
                 menu.innerHTML += `<h3 style="margin: 25px 15px 10px; color: #5c4033;">${cat}</h3>`;
                 Object.entries(data[cat]).forEach(([id, p]) => {
-                    const esgotado = p.esgotado;
                     menu.innerHTML += `
-                    <div class="product-card" style="${esgotado ? 'opacity:0.6; filter:grayscale(1);' : ''}">
+                    <div class="product-card" style="${p.esgotado ? 'opacity:0.6; filter:grayscale(1);' : ''}">
                         <img src="${p.foto || 'https://via.placeholder.com/150'}" class="product-img">
                         <div style="flex:1">
                             <h4>${p.nome}</h4>
-                            <p style="font-size:0.75rem;">${p.desc || ''}</p>
+                            <p style="font-size:0.75rem; color:#666">${p.desc || ''}</p>
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
                                 <span class="price-tag">R$ ${p.promo || p.preco}</span>
-                                ${esgotado ? '<b style="color:red">Esgotado</b>' : 
+                                ${p.esgotado ? '<b style="color:red">Esgotado</b>' : 
                                 `<button class="btn-order" onclick="addCarrinho('${p.nome}', '${p.promo || p.preco}')">+ Add</button>`}
                             </div>
                         </div>
@@ -72,25 +76,35 @@
             });
         }
 
-        // Funções de Carrinho (iguais às anteriores)
         function addCarrinho(nome, preco) {
             const valor = parseFloat(preco.replace(',', '.'));
             const item = carrinho.find(i => i.nome === nome);
-            if(item) { item.qtd++; } else { carrinho.push({ nome, preco: valor, qtd: 1 }); }
+            if(item) item.qtd++; else carrinho.push({ nome, preco: valor, qtd: 1 });
             atualizarBarra();
         }
 
         function atualizarBarra() {
             const bar = document.getElementById('cart-bar');
             const total = carrinho.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
-            if(carrinho.length > 0) {
-                bar.style.display = 'flex';
-                document.getElementById('cart-total-bar').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
-            } else { bar.style.display = 'none'; }
+            bar.style.display = carrinho.length > 0 ? 'flex' : 'none';
+            document.getElementById('cart-total-bar').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
         }
-        
-        // Finalização (Envia para o seu WhatsApp 13 98215-5569)
-        // ... (resto do código de checkout igual ao anterior)
+
+        function abrirCheckout() {
+            const nome = prompt("Seu nome?");
+            if(!nome) return;
+            
+            let msg = `*NOVO PEDIDO - RUSSO GOURMET*\n👤 Cliente: ${nome}\n\n`;
+            let total = 0;
+            carrinho.forEach(i => {
+                msg += `✅ ${i.qtd}x ${i.nome} - R$ ${(i.preco * i.qtd).toFixed(2)}\n`;
+                total += i.preco * i.qtd;
+            });
+            msg += `\n*TOTAL: R$ ${total.toFixed(2)}*`;
+            msg += `\n\n🔑 *PIX:* 13982155569\n_Envie o endereço de entrega abaixo:_`;
+            
+            window.open(`https://wa.me/5513982155569?text=${encodeURIComponent(msg)}`, '_blank');
+        }
     </script>
 </body>
 </html>
