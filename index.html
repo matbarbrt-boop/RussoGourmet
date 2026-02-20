@@ -4,23 +4,95 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Russo Gourmet | Cardápio</title>
-    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --marrom: #3d2b1f; --marrom-claro: #8b5e3c; --offwhite: #fdfaf5; --branco: #ffffff; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--offwhite); color: var(--marrom); padding-bottom: 100px; }
+        .header { background: var(--marrom); color: var(--branco); text-align: center; padding: 30px 20px; border-radius: 0 0 30px 30px; }
+        .container { width: 100%; max-width: 600px; margin: 0 auto; padding: 15px; }
+        .product-card { background: var(--branco); display: flex; padding: 12px; border-radius: 15px; margin-bottom: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 1px solid #eee; }
+        .product-img { width: 75px; height: 75px; border-radius: 10px; object-fit: cover; margin-right: 12px; }
+        .btn-add { background: var(--marrom); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
+        .cart-bar { position: fixed; bottom: 15px; left: 5%; width: 90%; background: var(--marrom); color: white; padding: 16px; border-radius: 15px; display: flex; justify-content: space-between; font-weight: bold; z-index: 1000; box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+        .modal-full { position: fixed; inset: 0; background: var(--offwhite); z-index: 2000; padding: 15px; overflow-y: auto; display: none; }
+        input, select, textarea { width: 100%; padding: 14px; margin-bottom: 12px; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; background: white; }
+        .taxa-info { background: #f0ede9; padding: 10px 15px; border-radius: 10px; margin-bottom: 8px; font-size: 0.85rem; display: flex; justify-content: space-between; }
+        .btn-final { background: #2b9348; color: white; width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: 800; font-size: 1rem; margin-top: 10px; cursor: pointer; }
+        h3.cat-title { margin: 25px 0 10px 5px; font-size: 1.1rem; border-left: 4px solid var(--marrom-claro); padding-left: 10px; }
+    </style>
 </head>
 <body>
-    <section class="brand-section">
-        <div class="logo-wrapper"><img src="russogourmet.png" class="logo-circle"></div>
-        <h1 class="brand-name">Russo Gourmet</h1>
-        <div id="status-loja" style="font-size: 0.85rem; margin-top: 5px;"></div>
-    </section>
+
+    <header class="header">
+        <h1 style="font-size: 1.5rem; letter-spacing: 1px;">RUSSO GOURMET</h1>
+        <div id="status-loja" style="font-size: 0.75rem; margin-top:8px; font-weight: 600;"></div>
+    </header>
 
     <main class="container" id="menu-render">
-        <p style="text-align:center; padding:50px;">Carregando delícias...</p>
+        <p style="text-align: center; padding: 40px; color: #999;">Carregando...</p>
     </main>
 
-    <div id="cart-bar" class="cart-bar" onclick="abrirCheckout()" style="display: none;">
-        <span>🛒 Ver Pedido</span>
+    <div id="cart-bar" class="cart-bar" onclick="abrirCheckout()" style="display:none">
+        <span>🛒 VER SACOLA</span>
         <span id="cart-total-bar">R$ 0,00</span>
+    </div>
+
+    <div id="modal-checkout" class="modal-full">
+        <div class="container" style="padding: 0;">
+            <h2 style="margin-bottom:15px;">Finalizar Pedido</h2>
+            <div id="resumo-itens" style="background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; font-size: 0.9rem;"></div>
+            
+            <div class="taxa-info"><span>Produtos:</span> <b id="subtotal-val">R$ 0,00</b></div>
+            <div class="taxa-info"><span>Entrega:</span> <b id="taxa-val">R$ 0,00</b></div>
+            <div id="box-taxa-troco" class="taxa-info" style="display:none; color: #d9534f; border: 1px solid #d9534f;"><span>Taxa p/ Troco:</span> <b>R$ 2,00</b></div>
+            <h3 id="total-final" style="text-align: right; color: var(--marrom-claro); margin: 15px 5px; font-size: 1.4rem;"></h3>
+            
+            <input type="text" id="c-nome" placeholder="Seu Nome">
+            
+            <select id="c-bairro" onchange="atualizarTotal()">
+                <option value="0">Escolha o Bairro...</option>
+                <option value="7">Pae Cará (R$ 7,00)</option>
+                <option value="7">Vila Alice (R$ 7,00)</option>
+                <option value="7">Cunhambebe (R$ 7,00)</option>
+                <option value="7">Parque Estuário (R$ 7,00)</option>
+                <option value="8">Jardim Progresso (R$ 8,00)</option>
+                <option value="8">Vila Áurea (R$ 8,00)</option>
+                <option value="8">Monteiro da Cruz (R$ 8,00)</option>
+                <option value="8">Prainha (R$ 8,00)</option>
+                <option value="10">Aldeia (R$ 10,00)</option>
+                <option value="9">Boa Esperança (R$ 9,00)</option>
+                <option value="10">Jardim Conceiçãozinha (R$ 10,00)</option>
+                <option value="13">Sítio Conceiçãozinha (R$ 13,00)</option>
+                <option value="13">Praça Yara Santini (R$ 13,00)</option>
+            </select>
+
+            <input type="text" id="c-rua" placeholder="Rua e Número">
+            <input type="text" id="c-ref" placeholder="Ponto de Referência e pontos proximos">
+            
+            <p style="font-size: 0.85rem; margin: 10px 5px 5px;"><b>Pagamento:</b></p>
+            <select id="c-pag" onchange="checkPagamento()">
+                <option value="Pix">Pix (Chave: 13982155569)</option>
+                <option value="Link de Pagamento (Enviar após o pedido)">Link de Pagamento</option>
+                <option value="Dinheiro">Dinheiro</option>
+            </select>
+
+            <div id="box-troco" style="display:none; background: #fff5f5; padding: 12px; border-radius: 10px; margin-bottom: 15px;">
+                <p style="font-size: 0.75rem; color: #d9534f; margin-bottom: 8px;">* Troco tem acréscimo de R$ 2,00</p>
+                <select id="c-precisa-troco" onchange="atualizarTotal()">
+                    <option value="Não">Não preciso de troco</option>
+                    <option value="Sim">Sim, preciso (+ R$ 2,00)</option>
+                </select>
+                <input type="text" id="c-quanto-troco" placeholder="Troco para quanto?">
+            </div>
+
+            <div id="pix-box" style="background:#e8f5e9; padding:12px; border-radius:10px; margin-bottom:15px; border:1px dashed #2b9348; font-size: 0.85rem;">
+                <b>Chave Pix: 13982155569</b>
+            </div>
+
+            <button class="btn-final" onclick="enviarWhatsApp()">ENVIAR NO WHATSAPP</button>
+            <button onclick="fecharCheckout()" style="width:100%; margin-top:15px; border:none; background:none; color:#999; padding: 10px;">Voltar</button>
+        </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
@@ -40,46 +112,46 @@
         const db = firebase.database();
 
         let carrinho = [];
-        const diasSemana = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+        let lojaAberta = false;
 
-        // Carregar Cardápio e Status
-        db.ref('cardapio').on('value', (snapshot) => {
-            renderizar(snapshot.val() || {});
-        });
-
-        db.ref('horarios').on('value', (s) => {
+        db.ref('config/horarios').on('value', s => {
             const h = s.val() || {};
-            const hoje = diasSemana[new Date().getDay()];
-            document.getElementById('status-loja').innerHTML = `🕒 Aberto hoje: ${h[hoje] || 'Consulte-nos'}`;
+            const hoje = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"][new Date().getDay()];
+            const config = h[hoje] || { abre: "09:00", fecha: "22:00" };
+            const agora = new Date().getHours()*60 + new Date().getMinutes();
+            const [ha, ma] = config.abre.split(':').map(Number);
+            const [hf, mf] = config.fecha.split(':').map(Number);
+            lojaAberta = agora >= (ha*60+ma) && agora <= (hf*60+mf);
+            document.getElementById('status-loja').innerText = lojaAberta ? "🟢 ABERTO" : "🔴 FECHADO";
         });
 
-        function renderizar(data) {
+        db.ref('cardapio').on('value', s => {
+            const data = s.val() || {};
             const menu = document.getElementById('menu-render');
             menu.innerHTML = "";
             Object.keys(data).forEach(cat => {
-                menu.innerHTML += `<h3 style="margin: 25px 15px 10px; color: #5c4033;">${cat}</h3>`;
+                menu.innerHTML += `<h3 class="cat-title">${cat}</h3>`;
                 Object.entries(data[cat]).forEach(([id, p]) => {
                     menu.innerHTML += `
-                    <div class="product-card" style="${p.esgotado ? 'opacity:0.6; filter:grayscale(1);' : ''}">
-                        <img src="${p.foto || 'https://via.placeholder.com/150'}" class="product-img">
+                    <div class="product-card" style="${p.esgotado ? 'opacity:0.5; filter:grayscale(1);' : ''}">
+                        <img src="${p.foto || 'https://via.placeholder.com/80'}" class="product-img">
                         <div style="flex:1">
                             <h4>${p.nome}</h4>
-                            <p style="font-size:0.75rem; color:#666">${p.desc || ''}</p>
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
-                                <span class="price-tag">R$ ${p.promo || p.preco}</span>
-                                ${p.esgotado ? '<b style="color:red">Esgotado</b>' : 
-                                `<button class="btn-order" onclick="addCarrinho('${p.nome}', '${p.promo || p.preco}')">+ Add</button>`}
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+                                <b style="color:var(--marrom-claro)">R$ ${p.promo || p.preco}</b>
+                                ${p.esgotado ? '' : `<button class="btn-add" onclick="addCarrinho('${p.nome}','${p.promo || p.preco}')">Adicionar</button>`}
                             </div>
                         </div>
                     </div>`;
                 });
             });
-        }
+        });
 
-        function addCarrinho(nome, preco) {
-            const valor = parseFloat(preco.replace(',', '.'));
-            const item = carrinho.find(i => i.nome === nome);
-            if(item) item.qtd++; else carrinho.push({ nome, preco: valor, qtd: 1 });
+        function addCarrinho(n, p) {
+            if(!lojaAberta) return alert("Fechado agora!");
+            const preco = parseFloat(p.replace(',','.'));
+            const item = carrinho.find(i => i.n === n);
+            if(item) item.qtd++; else carrinho.push({n, preco, qtd:1});
             atualizarBarra();
         }
 
@@ -87,23 +159,54 @@
             const bar = document.getElementById('cart-bar');
             const total = carrinho.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
             bar.style.display = carrinho.length > 0 ? 'flex' : 'none';
-            document.getElementById('cart-total-bar').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+            document.getElementById('cart-total-bar').innerText = `R$ ${total.toFixed(2).replace('.',',')}`;
         }
 
         function abrirCheckout() {
-            const nome = prompt("Seu nome?");
-            if(!nome) return;
+            const resumo = document.getElementById('resumo-itens');
+            resumo.innerHTML = carrinho.map(i => `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>${i.qtd}x ${i.n}</span><b>R$ ${(i.preco*i.qtd).toFixed(2).replace('.',',')}</b></div>`).join('');
+            atualizarTotal();
+            document.getElementById('modal-checkout').style.display = 'block';
+        }
+
+        function atualizarTotal() {
+            const subtotal = carrinho.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
+            const taxaEntrega = parseFloat(document.getElementById('c-bairro').value);
+            const pag = document.getElementById('c-pag').value;
+            const precisaTroco = document.getElementById('c-precisa-troco').value;
+            let taxaTroco = (pag === "Dinheiro" && precisaTroco === "Sim") ? 2 : 0;
+
+            document.getElementById('box-taxa-troco').style.display = taxaTroco > 0 ? 'flex' : 'none';
+            const total = subtotal + taxaEntrega + taxaTroco;
+
+            document.getElementById('subtotal-val').innerText = `R$ ${subtotal.toFixed(2).replace('.',',')}`;
+            document.getElementById('taxa-val').innerText = `R$ ${taxaEntrega.toFixed(2).replace('.',',')}`;
+            document.getElementById('total-final').innerText = `TOTAL: R$ ${total.toFixed(2).replace('.',',')}`;
+        }
+
+        function fecharCheckout() { document.getElementById('modal-checkout').style.display = 'none'; }
+        function checkPagamento() { 
+            const pag = document.getElementById('c-pag').value;
+            document.getElementById('pix-box').style.display = (pag === 'Pix') ? 'block' : 'none'; 
+            document.getElementById('box-troco').style.display = (pag === 'Dinheiro') ? 'block' : 'none'; 
+            atualizarTotal();
+        }
+
+        function enviarWhatsApp() {
+            const nome = document.getElementById('c-nome').value;
+            const bairroSel = document.getElementById('c-bairro');
+            const rua = document.getElementById('c-rua').value;
+            if(!nome || bairroSel.value === "0" || !rua) return alert("Preencha Nome, Bairro e Rua!");
+
+            const total = document.getElementById('total-final').innerText;
+            const itens = carrinho.map(i => `${i.qtd}x ${i.n}`).join('%0A');
+            const pag = document.getElementById('c-pag').value;
             
-            let msg = `*NOVO PEDIDO - RUSSO GOURMET*\n👤 Cliente: ${nome}\n\n`;
-            let total = 0;
-            carrinho.forEach(i => {
-                msg += `✅ ${i.qtd}x ${i.nome} - R$ ${(i.preco * i.qtd).toFixed(2)}\n`;
-                total += i.preco * i.qtd;
-            });
-            msg += `\n*TOTAL: R$ ${total.toFixed(2)}*`;
-            msg += `\n\n🔑 *PIX:* 13982155569\n_Envie o endereço de entrega abaixo:_`;
-            
-            window.open(`https://wa.me/5513982155569?text=${encodeURIComponent(msg)}`, '_blank');
+            let msg = `*NOVO PEDIDO - RUSSO GOURMET*%0A%0A*Cliente:* ${nome}%0A*Bairro:* ${bairroSel.options[bairroSel.selectedIndex].text}%0A*End:* ${rua}%0A*Ref:* ${document.getElementById('c-ref').value}%0A*Pagamento:* ${pag}%0A`;
+            if(pag === "Dinheiro" && document.getElementById('c-precisa-troco').value === "Sim") msg += `*Troco para:* ${document.getElementById('c-quanto-troco').value}%0A`;
+            msg += `%0A*ITENS:*%0A${itens}%0A%0A*${total}*`;
+
+            window.open(`https://wa.me/5513982155569?text=${msg}`);
         }
     </script>
 </body>
