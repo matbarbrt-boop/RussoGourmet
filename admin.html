@@ -10,153 +10,138 @@
         .sidebar button { width: 100%; padding: 12px; margin-bottom: 10px; background: none; border: none; color: white; text-align: left; cursor: pointer; font-weight: bold; border-radius: 8px; }
         .sidebar button.active { background: #5c4033; }
         .main { margin-left: 220px; flex: 1; padding: 30px; }
-        .card-adm { background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eaddcf; }
+        .card-adm { background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eaddcf; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .item-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f2ece4; align-items: center; }
-        input, textarea, select { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; }
+        input, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <h3>Painel Russo</h3><br>
-        <button onclick="aba('p')" id="btn-p" class="active">Pedidos</button>
-        <button onclick="aba('c')" id="btn-c">Cardápio</button>
-        <button onclick="aba('h')" id="btn-h">Horários</button>
+        <h3>Russo Admin</h3><br>
+        <button onclick="aba('c')" id="btn-c" class="active">🍰 Gerenciar Doces</button>
+        <button onclick="aba('h')" id="btn-h">🕒 Horários</button>
     </div>
 
     <main class="main">
-        <section id="sec-p"><h2>Pedidos</h2><div id="lista-p"></div></section>
-        
-        <section id="sec-c" style="display:none">
-            <h2>Gerenciar Itens</h2>
+        <section id="sec-c">
+            <h2>Cardápio em Tempo Real</h2>
             <div id="grid-c" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top:20px;"></div>
         </section>
 
         <section id="sec-h" style="display:none">
-            <h2>Horários</h2>
+            <h2>Horários de Funcionamento</h2>
             <div class="card-adm" id="grid-h"></div>
-            <button class="btn-order" onclick="salvarH()" style="width:200px">Salvar Horários</button>
+            <button class="btn-order" onclick="salvarH()" style="width:200px; background:#5c4033; color:white; padding:15px; border:none; border-radius:8px; cursor:pointer;">Salvar Horários</button>
         </section>
     </main>
 
     <div id="modal-edicao" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:3000; align-items:center; justify-content:center;">
         <div class="card-adm" style="width: 400px;">
             <h3 id="m-titulo">Editar Item</h3><br>
-            <input type="hidden" id="edit-idx">
-            <input type="text" id="m-nome" placeholder="Nome">
+            <input type="hidden" id="edit-id">
+            <input type="text" id="m-nome" placeholder="Nome do Doce">
             <textarea id="m-desc" placeholder="Descrição"></textarea>
-            <input type="text" id="m-preco" placeholder="Preço (Ex: 10,00)">
-            <input type="text" id="m-promo" placeholder="Preço Promoção (Opcional)">
-            <input type="text" id="m-foto" placeholder="Link da Imagem">
-            <button class="btn-order" onclick="salvarItem()" style="width:100%; padding: 15px;">Salvar Item</button>
+            <input type="text" id="m-preco" placeholder="Preço (ex: 15,00)">
+            <input type="text" id="m-promo" placeholder="Preço Promo (Opcional)">
+            <input type="text" id="m-foto" placeholder="Link da Foto">
+            <button onclick="salvarItem()" style="width:100%; padding: 15px; background:#5c4033; color:white; border:none; border-radius:8px; cursor:pointer;">SALVAR NA NUVEM</button>
             <button onclick="document.getElementById('modal-edicao').style.display='none'" style="width:100%; border:none; background:none; margin-top:10px; cursor:pointer;">Cancelar</button>
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
     <script>
-        const categorias = ["Morango do amor", "Coxinha russo", "Copo da felicidade-200ml", "Combinho russo(1 pessoa)", "Combinho casal(2 pessoas)", "Fatia cookie", "Piscininha recheada", "Barras recheadas", "Fatia brownie", "Copos da felicidade", "Mega cone trufado", "Bebidas", "Combo russo2.0", "Combo russo3.0", "Combinho russo", "Marmitinha"];
+        const firebaseConfig = {
+            apiKey: "AIzaSyCDiS_Mg9aN6zeU_V7ZReBUv_sTeHXcvz4",
+            authDomain: "russo-gourmet.firebaseapp.com",
+            databaseURL: "https://russo-gourmet-default-rtdb.firebaseio.com",
+            projectId: "russo-gourmet",
+            storageBucket: "russo-gourmet.firebasestorage.app",
+            messagingSenderId: "1072063151238",
+            appId: "1:1072063151238:web:c2ad5f6495669559fee507"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const categorias = ["Morango do amor", "Coxinha unitaria", "Copo da felicidade-200ml", "Combinho russo(1 pessoa)", "Combinho casal(2 pessoas)", "Fatia cookie", "Piscininha recheada", "Barras recheadas", "Fatia brownie", "Copo da felicidade", "Mega cone trufado", "Bebidas"];
         let catAtual = "";
 
-        function aba(id) {
-            ['p', 'c', 'h'].forEach(x => {
-                document.getElementById('sec-'+x).style.display = id === x ? 'block' : 'none';
-                document.getElementById('btn-'+x).classList.toggle('active', id === x);
-            });
-            if(id === 'c') renderC();
-            if(id === 'h') renderH();
-        }
+        // Carregar dados da nuvem
+        db.ref('cardapio').on('value', (snapshot) => {
+            const data = snapshot.val() || {};
+            renderC(data);
+        });
 
-        function renderC() {
-            const data = JSON.parse(localStorage.getItem('russo_db')) || {};
+        function renderC(data) {
             const grid = document.getElementById('grid-c');
             grid.innerHTML = categorias.map(cat => `
                 <div class="card-adm">
-                    <div style="display:flex; justify-content:space-between"><b>${cat}</b> <button onclick="abrirM('${cat}')" style="background:var(--primary); color:white; border:none; padding:4px 8px; border-radius:4px;">+</button></div>
-                    ${(data[cat] || []).map((p, i) => `
-                        <div class="item-row" style="${p.esgotado ? 'opacity:0.5' : ''}">
+                    <div style="display:flex; justify-content:space-between"><b>${cat}</b> <button onclick="abrirM('${cat}')" style="background:#5c4033; color:white; border:none; border-radius:4px; padding:2px 8px;">+</button></div>
+                    ${Object.entries(data[cat] || {}).map(([id, p]) => `
+                        <div class="item-row" style="${p.esgotado ? 'opacity:0.4' : ''}">
                             <small>${p.nome}</small>
                             <div>
-                                <button onclick="toggleEsgotado('${cat}', ${i})" style="border:none; background:none; cursor:pointer;">${p.esgotado ? '❌' : '✅'}</button>
-                                <button onclick="editar('${cat}', ${i})" style="border:none; background:none; cursor:pointer; margin-left:5px;">✏️</button>
-                                <button onclick="excluir('${cat}', ${i})" style="border:none; background:none; cursor:pointer; color:red; margin-left:5px;">🗑️</button>
+                                <button onclick="toggleEsgotado('${cat}', '${id}', ${p.esgotado})" title="Esgotado">${p.esgotado ? '❌' : '✅'}</button>
+                                <button onclick="editar('${cat}', '${id}')">✏️</button>
+                                <button onclick="excluir('${cat}', '${id}')">🗑️</button>
                             </div>
                         </div>`).join('')}
                 </div>`).join('');
         }
 
-        function toggleEsgotado(cat, i) {
-            const data = JSON.parse(localStorage.getItem('russo_db'));
-            data[cat][i].esgotado = !data[cat][i].esgotado;
-            localStorage.setItem('russo_db', JSON.stringify(data));
-            renderC();
-        }
-
         function abrirM(cat) {
-            catAtual = cat; document.getElementById('edit-idx').value = "";
+            catAtual = cat; document.getElementById('edit-id').value = "";
             document.getElementById('m-nome').value = ""; document.getElementById('m-preco').value = "";
             document.getElementById('m-desc').value = ""; document.getElementById('m-promo').value = "";
             document.getElementById('m-foto').value = "";
             document.getElementById('modal-edicao').style.display = 'flex';
         }
 
-        function editar(cat, i) {
-            catAtual = cat;
-            const p = JSON.parse(localStorage.getItem('russo_db'))[cat][i];
-            document.getElementById('edit-idx').value = i;
-            document.getElementById('m-nome').value = p.nome;
-            document.getElementById('m-desc').value = p.desc || "";
-            document.getElementById('m-preco').value = p.preco;
-            document.getElementById('m-promo').value = p.promo || "";
-            document.getElementById('m-foto').value = p.foto || "";
-            document.getElementById('modal-edicao').style.display = 'flex';
-        }
-
         function salvarItem() {
-            const data = JSON.parse(localStorage.getItem('russo_db')) || {};
-            const idx = document.getElementById('edit-idx').value;
+            const id = document.getElementById('edit-id').value;
             const obj = {
                 nome: document.getElementById('m-nome').value,
                 desc: document.getElementById('m-desc').value,
                 preco: document.getElementById('m-preco').value,
                 promo: document.getElementById('m-promo').value,
                 foto: document.getElementById('m-foto').value,
-                esgotado: (idx !== "") ? data[catAtual][idx].esgotado : false
+                esgotado: false
             };
-            if(!data[catAtual]) data[catAtual] = [];
-            if(idx === "") { data[catAtual].push(obj); } else { data[catAtual][idx] = obj; }
-            localStorage.setItem('russo_db', JSON.stringify(data));
+            if(id === "") { db.ref('cardapio/' + catAtual).push(obj); } 
+            else { db.ref('cardapio/' + catAtual + '/' + id).update(obj); }
             document.getElementById('modal-edicao').style.display = 'none';
-            renderC();
         }
 
-        function excluir(cat, i) {
-            if(confirm("Excluir item?")) {
-                const d = JSON.parse(localStorage.getItem('russo_db'));
-                d[cat].splice(i, 1);
-                localStorage.setItem('russo_db', JSON.stringify(d));
-                renderC();
-            }
+        function toggleEsgotado(cat, id, status) {
+            db.ref('cardapio/' + cat + '/' + id).update({ esgotado: !status });
         }
 
-        function renderH() {
-            const h = JSON.parse(localStorage.getItem('russo_horas')) || {};
-            const dias = ["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"];
-            document.getElementById('grid-h').innerHTML = dias.map(d => `
-                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                    <span><b>${d}</b></span>
-                    <div><input type="time" id="a-${d}" style="width:80px" value="${h[d]?.abre || '09:00'}"> às <input type="time" id="f-${d}" style="width:80px" value="${h[d]?.fecha || '23:00'}"></div>
-                </div>`).join('');
+        function excluir(cat, id) {
+            if(confirm("Excluir item permanentemente?")) db.ref('cardapio/' + cat + '/' + id).remove();
         }
 
-        function salvarH() {
-            const h = {};
-            ["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"].forEach(d => {
-                h[d] = { abre: document.getElementById('a-'+d).value, fecha: document.getElementById('f-'+d).value };
+        function editar(cat, id) {
+            catAtual = cat;
+            db.ref('cardapio/' + cat + '/' + id).once('value', (s) => {
+                const p = s.val();
+                document.getElementById('edit-id').value = id;
+                document.getElementById('m-nome').value = p.nome;
+                document.getElementById('m-desc').value = p.desc || "";
+                document.getElementById('m-preco').value = p.preco;
+                document.getElementById('m-promo').value = p.promo || "";
+                document.getElementById('m-foto').value = p.foto || "";
+                document.getElementById('modal-edicao').style.display = 'flex';
             });
-            localStorage.setItem('russo_horas', JSON.stringify(h));
-            alert("Horários salvos!");
         }
 
-        window.onload = () => aba('p');
+        function aba(id) {
+            document.getElementById('sec-c').style.display = id === 'c' ? 'block' : 'none';
+            document.getElementById('sec-h').style.display = id === 'h' ? 'block' : 'none';
+            document.getElementById('btn-c').classList.toggle('active', id === 'c');
+            document.getElementById('btn-h').classList.toggle('active', id === 'h');
+        }
     </script>
 </body>
 </html>
