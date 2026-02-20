@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Russo Gourmet | Cardápio</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <section class="brand-section">
+        <div class="logo-wrapper"><img src="russogourmet.png" class="logo-circle" alt="Logo"></div>
+        <h1 class="brand-name">Russo Gourmet</h1>
+        <div id="status-loja" style="font-weight: bold; margin-top: 5px;"></div>
+    </section>
+
+    <nav class="sticky-nav">
+        <div class="container"><input type="text" id="busca" class="search-box" placeholder="Pesquisar delícias..." onkeyup="filtrar()"></div>
+    </nav>
+
+    <main class="container" id="menu-render"></main>
+
+    <div id="cart-bar" class="cart-bar" onclick="abrirCheckout()" style="display: none;">
+        <span>🛒 Ver meu pedido</span>
+        <span id="cart-total-bar">R$ 0,00</span>
+    </div>
+
+    <div id="modal-checkout" class="modal-full">
+        <div class="container">
+            <h2 style="color: var(--primary); margin-bottom: 20px;">Finalizar Pedido</h2>
+            <div id="itens-carrinho"></div>
+            <div id="total-final" style="font-size: 1.5rem; font-weight: 800; text-align: right; margin: 20px 0; color: var(--primary);"></div>
+            
+            <input type="text" id="c-nome" class="search-box" placeholder="Seu Nome" style="margin-bottom: 10px;">
+            <input type="text" id="c-end" class="search-box" placeholder="Endereço de Entrega" style="margin-bottom: 10px;">
+            <select id="c-pag" class="search-box" style="margin-bottom: 20px;">
+                <option value="Pix">Pagar via Pix</option>
+                <option value="Cartão">Cartão (na entrega)</option>
+                <option value="Dinheiro">Dinheiro</option>
+            </select>
+            <button class="btn-order" onclick="finalizarPedido()" style="width: 100%; padding: 18px; font-size: 1.1rem;">Enviar para o WhatsApp</button>
+            <button onclick="fecharModais()" style="width: 100%; background: none; border: none; margin-top: 15px; color: var(--accent); font-weight: 600;">← Voltar ao cardápio</button>
+        </div>
+    </div>
+
+    <script>
+        let carrinho = [];
+        let aberta = false;
+
+        function renderizar() {
+            const data = JSON.parse(localStorage.getItem('russo_db')) || {};
+            const menu = document.getElementById('menu-render');
+            menu.innerHTML = "";
+            Object.keys(data).forEach(cat => {
+                if(!data[cat] || data[cat].length === 0) return;
+                menu.innerHTML += `<h3 style="margin: 25px 15px 10px; color: var(--primary); border-left: 4px solid var(--primary); padding-left: 10px;">${cat}</h3>`;
+                data[cat].forEach(p => {
+                    const esgotado = p.esgotado;
+                    menu.innerHTML += `
+                    <div class="product-card" data-nome="${p.nome.toLowerCase()}" style="${esgotado ? 'opacity: 0.6; filter: grayscale(1);' : ''}">
+                        <img src="${p.foto || 'https://via.placeholder.com/150'}" class="product-img">
+                        <div style="flex:1">
+                            <h4 style="font-size: 1rem;">${p.nome}</h4>
+                            <p style="font-size: 0.75rem; color: #666;">${p.desc || ''}</p>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+                                <span class="price-tag">R$ ${p.promo || p.preco}</span>
+                                ${esgotado ? '<span style="color:var(--danger); font-weight:bold;">Esgotado</span>' : 
+                                `<button class="btn-order" onclick="addCarrinho('${p.nome}', '${p.promo || p.preco}')">+ Add</button>`}
+                            </div>
+                        </div>
+                    </div>`;
+                });
+            });
+            checkHorario();
+        }
+
+        function addCarrinho(nome, preco) {
+            if(!aberta) return alert("A loja está fechada agora!");
+            const valor = parseFloat(preco.replace(',', '.'));
+            const item = carrinho.find(i => i.nome === nome);
+            if(item) { item.qtd++; } else { carrinho.push({ nome, preco: valor, qtd: 1 }); }
+            atualizarBarra();
+        }
+
+        function atualizarBarra() {
+            const bar = document.getElementById('cart-bar');
+            const total = carrinho.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
+            if(carrinho.length > 0) {
+                bar.style.display = 'flex';
+                document.getElementById('cart-total-bar').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+            } else { bar.style.display = 'none'; }
+        }
+
+        function abrirCheckout() {
+            const container = document.getElementById('itens-carrinho');
+            container.innerHTML = "";
+            let total = 0;
+            carrinho.forEach((item, idx) => {
+                total += (item.preco * item.qtd);
+                container.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:white; padding:15px; border-radius:15px;">
+                    <div><strong>${item.nome}</strong><br><small>R$ ${item.preco.toFixed(2).replace('.', ',')}</small></div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button onclick="mudarQtd(${idx}, -1)" style="width:25px; height:25px; border-radius:50%; border:1px solid #ddd;">-</button>
+                        <span>${item.qtd}</span>
+                        <button onclick="mudarQtd(${idx}, 1)" style="width:25px; height:25px; border-radius:50%; border:1px solid #ddd;">+</button>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('total-final').innerText = `Total: R$ ${total.toFixed(2).replace('.', ',')}`;
+            document.getElementById('modal-checkout').style.display = 'block';
+        }
+
+        function mudarQtd(idx, v) {
+            carrinho[idx].qtd += v;
+            if(carrinho[idx].qtd <= 0) carrinho.splice(idx, 1);
+            if(carrinho.length === 0) fecharModais();
+            atualizarBarra(); abrirCheckout();
+        }
+
+        function finalizarPedido() {
+            const n = document.getElementById('c-nome').value;
+            const e = document.getElementById('c-end').value;
+            if(!n || !e) return alert("Preencha nome e endereço!");
+
+            const itensTxt = carrinho.map(i => `${i.qtd}x ${i.nome}`).join('%0A');
+            const total = carrinho.reduce((acc, i) => acc + (i.preco * i.qtd), 0).toFixed(2).replace('.', ',');
+            const msg = `*NOVO PEDIDO - RUSSO GOURMET*%0A*Cliente:* ${n}%0A*Itens:*%0A${itensTxt}%0A*Total:* R$ ${total}%0A*Pagamento:* ${document.getElementById('c-pag').value}%0A*Endereço:* ${e}`;
+            
+            window.open(`https://wa.me/5513982155569?text=${msg}`);
+            carrinho = []; atualizarBarra(); fecharModais();
+        }
+
+        function checkHorario() {
+            const h = JSON.parse(localStorage.getItem('russo_horas')) || {};
+            const dia = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"][new Date().getDay()];
+            const config = h[dia] || { abre: "09:00", fecha: "23:00" };
+            const agora = new Date().getHours()*60 + new Date().getMinutes();
+            const [ha, ma] = config.abre.split(':').map(Number);
+            const [hf, mf] = config.fecha.split(':').map(Number);
+            aberta = agora >= (ha*60+ma) && agora <= (hf*60+mf);
+            document.getElementById('status-loja').innerHTML = aberta ? `<span style="color:var(--success)">● ABERTO</span>` : `<span style="color:var(--danger)">● FECHADO</span>`;
+        }
+
+        function fecharModais() { document.getElementById('modal-checkout').style.display = 'none'; }
+        function filtrar() {
+            const t = document.getElementById('busca').value.toLowerCase();
+            document.querySelectorAll('.product-card').forEach(c => c.style.display = c.dataset.nome.includes(t) ? 'flex' : 'none');
+        }
+        window.onload = renderizar;
+    </script>
+</body>
+</html>
