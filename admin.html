@@ -2,57 +2,65 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Painel Russo Gourmet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Russo Gourmet</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #5c4033; --bg: #fdfaf5; }
-        body { display: flex; background: var(--bg); font-family: sans-serif; margin: 0; }
-        .sidebar { width: 220px; background: #3d2b1f; color: white; height: 100vh; position: fixed; padding: 20px; }
-        .sidebar button { width: 100%; padding: 12px; margin-bottom: 10px; background: none; border: none; color: white; text-align: left; cursor: pointer; font-weight: bold; border-radius: 8px; }
-        .sidebar button.active { background: var(--primary); }
-        .main { margin-left: 260px; flex: 1; padding: 30px; }
-        .card-adm { background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eaddcf; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .item-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f2ece4; align-items: center; }
-        input, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .btn-save { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        :root { --marrom: #3d2b1f; --offwhite: #fdfaf5; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: var(--offwhite); }
+        .nav { background: var(--marrom); padding: 15px; display: flex; gap: 10px; position: sticky; top: 0; z-index: 100; }
+        .nav button { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; background: #554133; color: #ccc; }
+        .nav button.active { background: white; color: var(--marrom); }
+        .container { padding: 15px; max-width: 800px; margin: 0 auto; }
+        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-content { background: white; width: 100%; max-width: 450px; padding: 25px; border-radius: 20px; max-height: 90vh; overflow-y: auto; }
+        input, textarea { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        .btn-main { background: var(--marrom); color: white; width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        #preview-img { width: 100px; height: 100px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; display: none; }
     </style>
 </head>
 <body>
-    <div class="sidebar">
-        <h3>Russo Admin</h3><br>
-        <button onclick="aba('c')" id="btn-c" class="active">🍰 Gerenciar Doces</button>
-        <button onclick="aba('h')" id="btn-h">🕒 Horários</button>
+
+    <div class="nav">
+        <button onclick="aba('c')" id="btn-c" class="active">PRODUTOS</button>
+        <button onclick="aba('h')" id="btn-h">HORÁRIOS</button>
     </div>
 
-    <main class="main">
+    <div class="container">
         <section id="sec-c">
-            <h2>Cardápio em Tempo Real</h2>
-            <div id="grid-c" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;"></div>
+            <div id="grid-c"></div>
         </section>
 
         <section id="sec-h" style="display:none">
-            <h2>Horários de Funcionamento</h2>
-            <div class="card-adm" id="grid-h"></div>
-            <button class="btn-save" onclick="salvarH()">Salvar Horários</button>
+            <div class="card" id="lista-horarios"></div>
+            <button class="btn-main" onclick="salvarH()">SALVAR HORÁRIOS</button>
         </section>
-    </main>
+    </div>
 
-    <div id="modal-edicao" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:3000; align-items:center; justify-content:center;">
-        <div class="card-adm" style="width: 400px;">
-            <h3 id="m-titulo">Editar Item</h3>
+    <div id="modal-edicao" class="modal">
+        <div class="modal-content">
+            <h3 id="m-titulo">Editar Item</h3><br>
             <input type="hidden" id="edit-id">
             <input type="text" id="m-nome" placeholder="Nome do Doce">
             <textarea id="m-desc" placeholder="Descrição"></textarea>
-            <input type="text" id="m-preco" placeholder="Preço (ex: 15,00)">
+            <input type="text" id="m-preco" placeholder="Preço (Ex: 15,00)">
             <input type="text" id="m-promo" placeholder="Preço Promo (Opcional)">
-            <input type="text" id="m-foto" placeholder="Link da Foto">
-            <button class="btn-save" style="width:100%" onclick="salvarItem()">SALVAR NA NUVEM</button>
-            <button onclick="document.getElementById('modal-edicao').style.display='none'" style="width:100%; border:none; background:none; margin-top:10px; cursor:pointer;">Cancelar</button>
+            
+            <p style="font-size: 0.8rem; margin-bottom: 5px;">Foto do Produto:</p>
+            <img id="preview-img">
+            <input type="file" id="m-foto-file" accept="image/*">
+            <input type="hidden" id="m-foto-base64">
+
+            <button class="btn-main" onclick="salvarItem()">SALVAR NO BANCO</button>
+            <button onclick="fecharM()" style="width:100%; border:none; background:none; margin-top:15px; color:#999; cursor:pointer;">Cancelar</button>
         </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCDiS_Mg9aN6zeU_V7ZReBUv_sTeHXcvz4",
@@ -66,100 +74,120 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        const categorias = ["Morango do amor", "Coxinha unitaria", "Copo da felicidade-200ml", "Combinho russo(1 pessoa)", "Combinho casal(2 pessoas)", "Piscininha recheada", "Barras recheadas", "Copos da felicidade", "Mega cone trufado", "Bebidas", "Combo russo 2.0", "Combo russo 3.0", "Combinho russo", "Fatias", "Marmitinha"];
-        const diasSemana = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+        const categorias = ["Morango do amor", "Coxinha unitaria", "Copo da felicidade-200ml", "Combinho russo", "Combinho casal", "Fatia cookie", "Piscininha recheada", "Barras recheadas", "Fatia brownie", "Copo da felicidade", "Mega cone trufado", "Bebidas"];
         let catAtual = "";
 
-        // Carregar Cardápio
-        db.ref('cardapio').on('value', (snapshot) => {
-            const data = snapshot.val() || {};
-            renderC(data);
+        // Conversor de Imagem para Base64
+        document.getElementById('m-foto-file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    document.getElementById('m-foto-base64').value = reader.result;
+                    const prev = document.getElementById('preview-img');
+                    prev.src = reader.result;
+                    prev.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
         });
 
-        function renderC(data) {
+        db.ref('cardapio').on('value', snap => {
+            const data = snap.val() || {};
             const grid = document.getElementById('grid-c');
             grid.innerHTML = categorias.map(cat => `
-                <div class="card-adm">
-                    <div style="display:flex; justify-content:space-between"><b>${cat}</b> <button onclick="abrirM('${cat}')" style="background:#5c4033; color:white; border:none; border-radius:4px; padding:2px 8px; cursor:pointer;">+</button></div>
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                        <b style="color:#8b5e3c">${cat}</b>
+                        <button onclick="abrirM('${cat}')" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">➕</button>
+                    </div>
                     ${Object.entries(data[cat] || {}).map(([id, p]) => `
-                        <div class="item-row" style="${p.esgotado ? 'opacity:0.4' : ''}">
-                            <small>${p.nome}</small>
+                        <div class="item-row" style="${p.esgotado ? 'opacity:0.5' : ''}">
+                            <span style="font-size:0.85rem">${p.nome}</span>
                             <div>
-                                <button onclick="toggleEsgotado('${cat}', '${id}', ${p.esgotado})">${p.esgotado ? '❌' : '✅'}</button>
-                                <button onclick="editar('${cat}', '${id}')">✏️</button>
-                                <button onclick="excluir('${cat}', '${id}')">🗑️</button>
+                                <button onclick="toggleEsgotado('${cat}','${id}',${p.esgotado})" style="border:none; background:none; cursor:pointer;">${p.esgotado ? '❌' : '✅'}</button>
+                                <button onclick="editar('${cat}','${id}')" style="border:none; background:none; cursor:pointer; margin-left:10px;">✏️</button>
+                                <button onclick="excluir('${cat}','${id}')" style="border:none; background:none; cursor:pointer; margin-left:10px;">🗑️</button>
                             </div>
                         </div>`).join('')}
                 </div>`).join('');
+        });
+
+        db.ref('config/horarios').on('value', s => {
+            const h = s.val() || {};
+            const dias = ["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"];
+            document.getElementById('lista-horarios').innerHTML = dias.map(d => `
+                <div style="display:flex; justify-content:space-between; margin-bottom:12px; align-items:center;">
+                    <b style="font-size:0.9rem">${d}</b>
+                    <span><input type="time" id="a-${d}" value="${h[d]?.abre || '09:00'}" style="width:85px; margin:0"> - <input type="time" id="f-${d}" value="${h[d]?.fecha || '22:00'}" style="width:85px; margin:0"></span>
+                </div>`).join('');
+        });
+
+        function salvarH() {
+            const h = {};
+            ["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"].forEach(d => {
+                h[d] = { abre: document.getElementById('a-'+d).value, fecha: document.getElementById('f-'+d).value };
+            });
+            db.ref('config/horarios').set(h).then(() => alert("Horários salvos!"));
         }
 
-        // Funções de Itens
         function abrirM(cat) {
-            catAtual = cat; document.getElementById('edit-id').value = "";
-            document.getElementById('m-nome').value = ""; document.getElementById('m-preco').value = "";
-            document.getElementById('m-desc').value = ""; document.getElementById('m-promo').value = "";
-            document.getElementById('m-foto').value = "";
+            catAtual = cat; 
+            document.getElementById('edit-id').value = "";
+            document.getElementById('m-nome').value = ""; 
+            document.getElementById('m-preco').value = "";
+            document.getElementById('m-desc').value = ""; 
+            document.getElementById('m-promo').value = "";
+            document.getElementById('m-foto-base64').value = "";
+            document.getElementById('preview-img').style.display = 'none';
             document.getElementById('modal-edicao').style.display = 'flex';
         }
 
-        function salvarItem() {
-            const id = document.getElementById('edit-id').value;
-            const obj = {
-                nome: document.getElementById('m-nome').value,
-                desc: document.getElementById('m-desc').value,
-                preco: document.getElementById('m-preco').value,
-                promo: document.getElementById('m-promo').value,
-                foto: document.getElementById('m-foto').value,
-                esgotado: false
-            };
-            if(id === "") db.ref('cardapio/' + catAtual).push(obj);
-            else db.ref('cardapio/' + catAtual + '/' + id).update(obj);
-            document.getElementById('modal-edicao').style.display = 'none';
-        }
-
-        function toggleEsgotado(cat, id, status) { db.ref('cardapio/' + cat + '/' + id).update({ esgotado: !status }); }
-        function excluir(cat, id) { if(confirm("Excluir?")) db.ref('cardapio/' + cat + '/' + id).remove(); }
         function editar(cat, id) {
             catAtual = cat;
-            db.ref('cardapio/' + cat + '/' + id).once('value', (s) => {
+            db.ref('cardapio/'+cat+'/'+id).once('value', s => {
                 const p = s.val();
                 document.getElementById('edit-id').value = id;
                 document.getElementById('m-nome').value = p.nome;
                 document.getElementById('m-desc').value = p.desc || "";
                 document.getElementById('m-preco').value = p.preco;
                 document.getElementById('m-promo').value = p.promo || "";
-                document.getElementById('m-foto').value = p.foto || "";
+                document.getElementById('m-foto-base64').value = p.foto || "";
+                if(p.foto) {
+                    const prev = document.getElementById('preview-img');
+                    prev.src = p.foto;
+                    prev.style.display = 'block';
+                }
                 document.getElementById('modal-edicao').style.display = 'flex';
             });
         }
 
-        // Lógica de Horários
-        function renderH() {
-            db.ref('horarios').once('value', (s) => {
-                const h = s.val() || {};
-                const grid = document.getElementById('grid-h');
-                grid.innerHTML = diasSemana.map(dia => `
-                    <div class="item-row">
-                        <span style="width:100px"><strong>${dia}</strong></span>
-                        <input type="text" id="h-${dia}" value="${h[dia] || '18:00 - 23:00'}" style="margin:0">
-                    </div>`).join('');
-            });
+        function salvarItem() {
+            const id = document.getElementById('edit-id').value;
+            const item = { 
+                nome: document.getElementById('m-nome').value, 
+                desc: document.getElementById('m-desc').value, 
+                preco: document.getElementById('m-preco').value, 
+                promo: document.getElementById('m-promo').value, 
+                foto: document.getElementById('m-foto-base64').value, 
+                esgotado: false 
+            };
+            if(!item.nome || !item.preco) return alert("Preencha o nome e preço!");
+            
+            if(id === "") db.ref('cardapio/'+catAtual).push(item);
+            else db.ref('cardapio/'+catAtual+'/'+id).update(item);
+            fecharM();
         }
 
-        function salvarH() {
-            const novosH = {};
-            diasSemana.forEach(dia => novosH[dia] = document.getElementById('h-'+dia).value);
-            db.ref('horarios').set(novosH).then(() => alert("Horários Salvos!"));
-        }
-
+        function toggleEsgotado(cat, id, s) { db.ref('cardapio/'+cat+'/'+id).update({esgotado: !s}); }
+        function excluir(cat, id) { if(confirm("Apagar doce?")) db.ref('cardapio/'+cat+'/'+id).remove(); }
+        function fecharM() { document.getElementById('modal-edicao').style.display = 'none'; }
         function aba(id) {
-            document.getElementById('sec-c').style.display = id === 'c' ? 'block' : 'none';
-            document.getElementById('sec-h').style.display = id === 'h' ? 'block' : 'none';
-            document.getElementById('btn-c').className = id === 'c' ? 'active' : '';
-            document.getElementById('btn-h').className = id === 'h' ? 'active' : '';
-            if(id === 'h') renderH();
+            document.getElementById('sec-c').style.display = id==='c'?'block':'none';
+            document.getElementById('sec-h').style.display = id==='h'?'block':'none';
+            document.getElementById('btn-c').className = id==='c'?'active':'';
+            document.getElementById('btn-h').className = id==='h'?'active':'';
         }
     </script>
 </body>
 </html>
-
