@@ -20,6 +20,11 @@
         .taxa-info { background: #f0ede9; padding: 10px 15px; border-radius: 10px; margin-bottom: 8px; font-size: 0.85rem; display: flex; justify-content: space-between; }
         .btn-final { background: #2b9348; color: white; width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: 800; font-size: 1rem; margin-top: 10px; cursor: pointer; }
         h3.cat-title { margin: 25px 0 10px 5px; font-size: 1.1rem; border-left: 4px solid var(--marrom-claro); padding-left: 10px; }
+        
+        /* Novos estilos para os botões de ajuste no checkout */
+        .item-checkout { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #eee; }
+        .qtd-controls { display: flex; align-items: center; gap: 10px; }
+        .btn-qty { background: #eee; border: none; width: 28px; height: 28px; border-radius: 50%; font-weight: bold; cursor: pointer; color: var(--marrom); }
     </style>
 </head>
 <body>
@@ -30,7 +35,7 @@
     </header>
 
     <main class="container" id="menu-render">
-        <p style="text-align: center; padding: 40px; color: #999;">Carregando...</p>
+        <p style="text-align: center; padding: 40px; color: #999;">Carregando cardápio...</p>
     </main>
 
     <div id="cart-bar" class="cart-bar" onclick="abrirCheckout()" style="display:none">
@@ -40,8 +45,8 @@
 
     <div id="modal-checkout" class="modal-full">
         <div class="container" style="padding: 0;">
-            <h2 style="margin-bottom:15px;">Finalizar Pedido</h2>
-            <div id="resumo-itens" style="background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; font-size: 0.9rem;"></div>
+            <h2 style="margin-bottom:15px;">Sua Sacola</h2>
+            <div id="resumo-itens" style="background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px;"></div>
             
             <div class="taxa-info"><span>Produtos:</span> <b id="subtotal-val">R$ 0,00</b></div>
             <div class="taxa-info"><span>Entrega:</span> <b id="taxa-val">R$ 0,00</b></div>
@@ -67,8 +72,8 @@
                 <option value="13">Praça Yara Santini (R$ 13,00)</option>
             </select>
 
-            <input type="text" id="c-rua" placeholder="Rua e Número">
-            <input type="text" id="c-ref" placeholder="Ponto de Referência e pontos proximos">
+            <input type="text" id="c-rua" placeholder="Rua, Número e Apto">
+            <input type="text" id="c-ref" placeholder="Ponto de Referência">
             
             <p style="font-size: 0.85rem; margin: 10px 5px 5px;"><b>Pagamento:</b></p>
             <select id="c-pag" onchange="checkPagamento()">
@@ -90,8 +95,8 @@
                 <b>Chave Pix: 13982155569</b>
             </div>
 
-            <button class="btn-final" onclick="enviarWhatsApp()">ENVIAR NO WHATSAPP</button>
-            <button onclick="fecharCheckout()" style="width:100%; margin-top:15px; border:none; background:none; color:#999; padding: 10px;">Voltar</button>
+            <button class="btn-final" onclick="enviarWhatsApp()">FINALIZAR NO WHATSAPP</button>
+            <button onclick="fecharCheckout()" style="width:100%; margin-top:15px; border:none; background:none; color:#999; padding: 10px;">Continuar Comprando</button>
         </div>
     </div>
 
@@ -122,7 +127,7 @@
             const [ha, ma] = config.abre.split(':').map(Number);
             const [hf, mf] = config.fecha.split(':').map(Number);
             lojaAberta = agora >= (ha*60+ma) && agora <= (hf*60+mf);
-            document.getElementById('status-loja').innerText = lojaAberta ? "🟢 ABERTO" : "🔴 FECHADO";
+            document.getElementById('status-loja').innerText = lojaAberta ? "🟢 ABERTO AGORA" : "🔴 FECHADO NO MOMENTO";
         });
 
         db.ref('cardapio').on('value', s => {
@@ -136,7 +141,7 @@
                     <div class="product-card" style="${p.esgotado ? 'opacity:0.5; filter:grayscale(1);' : ''}">
                         <img src="${p.foto || 'https://via.placeholder.com/80'}" class="product-img">
                         <div style="flex:1">
-                            <h4>${p.nome}</h4>
+                            <h4 style="font-size:0.9rem;">${p.nome}</h4>
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
                                 <b style="color:var(--marrom-claro)">R$ ${p.promo || p.preco}</b>
                                 ${p.esgotado ? '' : `<button class="btn-add" onclick="addCarrinho('${p.nome}','${p.promo || p.preco}')">Adicionar</button>`}
@@ -148,11 +153,25 @@
         });
 
         function addCarrinho(n, p) {
-            if(!lojaAberta) return alert("Fechado agora!");
+            if(!lojaAberta) return alert("Estamos fechados!");
             const preco = parseFloat(p.replace(',','.'));
             const item = carrinho.find(i => i.n === n);
             if(item) item.qtd++; else carrinho.push({n, preco, qtd:1});
             atualizarBarra();
+        }
+
+        function mudarQtd(nome, delta) {
+            const item = carrinho.find(i => i.n === nome);
+            if(item) {
+                item.qtd += delta;
+                if(item.qtd <= 0) {
+                    carrinho = carrinho.filter(i => i.n !== nome);
+                }
+            }
+            if(carrinho.length === 0) fecharCheckout();
+            atualizarBarra();
+            renderizarResumo();
+            atualizarTotal();
         }
 
         function atualizarBarra() {
@@ -162,11 +181,28 @@
             document.getElementById('cart-total-bar').innerText = `R$ ${total.toFixed(2).replace('.',',')}`;
         }
 
-        function abrirCheckout() {
+        function renderizarResumo() {
             const resumo = document.getElementById('resumo-itens');
-            resumo.innerHTML = carrinho.map(i => `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>${i.qtd}x ${i.n}</span><b>R$ ${(i.preco*i.qtd).toFixed(2).replace('.',',')}</b></div>`).join('');
+            resumo.innerHTML = carrinho.map(i => `
+                <div class="item-checkout">
+                    <div style="flex:1">
+                        <div style="font-weight:600; font-size:0.85rem">${i.n}</div>
+                        <div style="font-size:0.75rem; color:#888">R$ ${(i.preco*i.qtd).toFixed(2).replace('.',',')}</div>
+                    </div>
+                    <div class="qtd-controls">
+                        <button class="btn-qty" onclick="mudarQtd('${i.n}', -1)">-</button>
+                        <span style="font-weight:bold; font-size:0.9rem; min-width:15px; text-align:center">${i.qtd}</span>
+                        <button class="btn-qty" onclick="mudarQtd('${i.n}', 1)">+</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function abrirCheckout() {
+            renderizarResumo();
             atualizarTotal();
             document.getElementById('modal-checkout').style.display = 'block';
+            document.body.style.overflow = 'hidden';
         }
 
         function atualizarTotal() {
@@ -184,7 +220,11 @@
             document.getElementById('total-final').innerText = `TOTAL: R$ ${total.toFixed(2).replace('.',',')}`;
         }
 
-        function fecharCheckout() { document.getElementById('modal-checkout').style.display = 'none'; }
+        function fecharCheckout() { 
+            document.getElementById('modal-checkout').style.display = 'none'; 
+            document.body.style.overflow = 'auto';
+        }
+
         function checkPagamento() { 
             const pag = document.getElementById('c-pag').value;
             document.getElementById('pix-box').style.display = (pag === 'Pix') ? 'block' : 'none'; 
@@ -196,7 +236,7 @@
             const nome = document.getElementById('c-nome').value;
             const bairroSel = document.getElementById('c-bairro');
             const rua = document.getElementById('c-rua').value;
-            if(!nome || bairroSel.value === "0" || !rua) return alert("Preencha Nome, Bairro e Rua!");
+            if(!nome || bairroSel.value === "0" || !rua) return alert("Nome, Bairro e Rua são obrigatórios!");
 
             const total = document.getElementById('total-final').innerText;
             const itens = carrinho.map(i => `${i.qtd}x ${i.n}`).join('%0A');
